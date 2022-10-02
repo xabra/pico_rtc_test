@@ -1,5 +1,5 @@
 [package]
-name = "laminator_controller"
+name = "float_benchmark"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,7 +11,29 @@ rp-pico = "0.5.0"
 panic-halt = "0.2.0"
 embedded-hal ="0.2.7"
 cortex-m-rt = "0.7.1" 
+defmt = "0.3.2"
+defmt-rtt = "0.3.2"
 
 [dev-dependencies]
 
 [features]
+
+# cargo build/run
+[profile.dev]
+codegen-units = 1
+debug = 2
+debug-assertions = true
+incremental = false
+# >>> opt-level = 3, changed to 1 for interactive debug
+opt-level = 1
+overflow-checks = true
+
+# cargo build/run --release
+[profile.release]
+codegen-units = 1
+debug = 1
+debug-assertions = false
+incremental = false
+lto = 'fat'
+opt-level = 3
+overflow-checks = false
