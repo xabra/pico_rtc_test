@@ -1,5 +1,5 @@
 [package]
-name = "float_benchmark"
+name = "pico_rtc_test"
 version = "0.1.0"
 edition = "2021"
 
