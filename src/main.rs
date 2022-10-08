@@ -1,36 +1,18 @@
-
-
 #![no_std]
 #![no_main]
 
-//
+// ----- PICO REAL TIME CLOCK TEST -----
 
-// The macro for our start-up function
 use rp_pico::entry;
-
-// GPIO traits
-use embedded_hal::digital::v2::OutputPin;
-
-// Ensure we halt the program on panic (if we don't mention this crate it won't
-// be linked)
 use panic_halt as _;
-
-// Pull in any important traits
-use rp_pico::hal::prelude::*;
-
-// A shorter alias for the Peripheral Access Crate, which provides low-level
-// register access
-use rp_pico::hal::pac;
-
-// A shorter alias for the Hardware Abstraction Layer, which provides
-// higher-level drivers.
 use rp_pico::hal;
-use rp_pico::hal::rom_data::float_funcs::fmul;
+use rp_pico::hal::pac;
+use rp_pico::hal::prelude::*;
+use hal::rtc::{RealTimeClock, DateTime, DayOfWeek};
 
 use defmt::*;
 use defmt_rtt as _;
 
-/// Entry point
 #[entry]
 fn main() -> ! {
     // Grab our singleton objects
@@ -41,7 +23,6 @@ fn main() -> ! {
     let mut watchdog = hal::Watchdog::new(pac.WATCHDOG);
 
     // Configure the clocks
-    //
     // The default is to generate a 125 MHz system clock
     let clocks = hal::clocks::init_clocks_and_plls(
         rp_pico::XOSC_CRYSTAL_FREQ,
@@ -55,37 +36,28 @@ fn main() -> ! {
     .ok()
     .unwrap();
 
-    // The delay object lets us wait for specified amounts of time (in
-    // milliseconds)
+    // The delay object lets us wait for specified amounts of time (in milliseconds)
     let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
-    // The single-cycle I/O block controls our GPIO pins
-    let sio = hal::Sio::new(pac.SIO);
+    // Make a DateTime struct to init the RTC
+    let initial_date_time = DateTime {
+        year: 2022,
+        month: 10,
+        day: 7,
+        day_of_week: DayOfWeek::Friday,
+        hour: 23,
+        minute: 30,
+        second: 0,
+    };
+    
+    info!("init time:   {:?},  {:?},  {:?},  {:?}, ",  initial_date_time.day, initial_date_time.hour, initial_date_time.minute, initial_date_time.second);
+    let rtc =  RealTimeClock::new(pac.RTC, clocks.rtc_clock , &mut pac.RESETS, initial_date_time).expect("ERROR IN NEW RTC");
+    delay.delay_us(14); // <-- DELAYS LESS THAN 14 us PRODUCE ERRONEOUS RESULTS
+    let now = rtc.now().expect("Error in RTC now");
+    info!("now:   {:?},  {:?},  {:?},  {:?}, ",  now.day, now.hour, now.minute, now.second);
 
-    // Set the pins up according to their function on this particular board
-    let pins = rp_pico::Pins::new(
-        pac.IO_BANK0,
-        pac.PADS_BANK0,
-        sio.gpio_bank0,
-        &mut pac.RESETS,
-    );
-
-    // Set the pin to be an output
-    let mut test_pin = pins.gpio8.into_push_pull_output();
-
-
-
-    // Blink the LED at 1 Hz
     loop {
-        test_pin.set_high().unwrap();
-
-        delay.delay_us(10);
-
-        test_pin.set_low().unwrap();
-
-
-        delay.delay_us(10);
+        // forever
     }
-}
 
-// End of file
+}
